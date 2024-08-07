@@ -3,32 +3,60 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Cat, Heart, Info, Paw, ArrowRight } from "lucide-react";
+import { Cat, Heart, Info, Paw, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
 
 const catImages = [
   "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg",
   "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/1200px-Cat_November_2010-1a.jpg",
   "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Kittyply_edit1.jpg/1200px-Kittyply_edit1.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Cat_November_2010-1a.jpg/1200px-Cat_November_2010-1a.jpg",
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg/1200px-Orange_tabby_cat_sitting_on_fallen_leaves-Hisashi-01A.jpg",
 ];
 
 const Index = () => {
   const [likes, setLikes] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showAlert, setShowAlert] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % catImages.length);
+      setProgress(0);
     }, 5000);
 
-    return () => clearInterval(timer);
+    const progressTimer = setInterval(() => {
+      setProgress((prevProgress) => Math.min(prevProgress + 1, 100));
+    }, 50);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(progressTimer);
+    };
   }, []);
 
   const handleLike = () => {
     setLikes(likes + 1);
     setShowAlert(true);
     setTimeout(() => setShowAlert(false), 3000);
+    toast({
+      title: "Thanks for the love!",
+      description: "Your appreciation means a lot to our feline friends.",
+    });
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex - 1 + catImages.length) % catImages.length);
+    setProgress(0);
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) => (prevIndex + 1) % catImages.length);
+    setProgress(0);
   };
 
   return (
@@ -55,18 +83,37 @@ const Index = () => {
       </div>
       
       <div className="max-w-4xl mx-auto p-8">
-        <AnimatePresence mode="wait">
-          <motion.img 
-            key={currentImageIndex}
-            src={catImages[currentImageIndex]} 
-            alt="Cute cat" 
-            className="mx-auto object-cover w-full h-[400px] rounded-lg mb-8 shadow-lg"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5 }}
-          />
-        </AnimatePresence>
+        <div className="relative mb-8">
+          <AnimatePresence mode="wait">
+            <motion.img 
+              key={currentImageIndex}
+              src={catImages[currentImageIndex]} 
+              alt="Cute cat" 
+              className="mx-auto object-cover w-full h-[400px] rounded-lg shadow-lg"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.5 }}
+            />
+          </AnimatePresence>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+            onClick={handlePrevImage}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+            onClick={handleNextImage}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Progress value={progress} className="mt-2" />
+        </div>
         
         <Tabs defaultValue="facts" className="mb-8">
           <TabsList className="grid w-full grid-cols-2">
@@ -142,10 +189,13 @@ const Index = () => {
             variant="outline" 
             size="lg" 
             onClick={handleLike}
-            className="group"
+            className="group relative overflow-hidden"
           >
-            <Heart className="mr-2 h-4 w-4 group-hover:text-red-500 transition-colors" />
-            Like this page ({likes})
+            <span className="relative z-10 flex items-center">
+              <Heart className="mr-2 h-4 w-4 group-hover:text-red-500 transition-colors" />
+              Like this page ({likes})
+            </span>
+            <span className="absolute inset-0 bg-gradient-to-r from-pink-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
         </div>
 
